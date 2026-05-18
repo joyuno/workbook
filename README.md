@@ -33,17 +33,13 @@ The plugin's "better method" for non-text formats is **Claude Code's built-in mu
 
 ## Installation
 
-```bash
-# Clone next to your study material
-git clone https://github.com/joyuno/workbook.git ~/path/to/workbook
+Inside Claude Code:
 
-# Inside Claude Code, install the plugin
-/plugin install ~/path/to/workbook
+```text
+/plugin install joyuno/workbook
 ```
 
-Restart Claude Code to pick up the new commands.
-
-(Or symlink into `~/.claude/plugins/workbook` if you prefer the manual route.)
+Restart Claude Code (or reload the plugin list) and the `/workbook` and `/workbook-verify` commands appear.
 
 ## Quick start
 
@@ -94,16 +90,9 @@ Full spec lives in [`skills/workbook/SKILL.md`](skills/workbook/SKILL.md).
 
 Always single-quote `q:` and every `choices:` item when the content is Korean or contains `:` / `*` / pure digits / quotes. External LLMs frequently emit plain scalars that the YAML parser then rejects — the `workbook` skill enforces single-quoting by default.
 
-## Roadmap
-
-- [ ] `examples/` — add reference packs covering each supported format
-- [ ] Domain-specific sub-skills (`workbook-language`, `workbook-history`, ...) if demand emerges
-- [ ] `/workbook-folder` — explicit folder ingestion mode with batch confirmation
-- [ ] CI lint workflow you can copy into your own pack repo
-
 ## License
 
-MIT.
+MIT — see [`LICENSE`](LICENSE).
 
 ## See also
 
