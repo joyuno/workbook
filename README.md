@@ -1,6 +1,6 @@
 # Workbook — Claude Code plugin
 
-Convert study material (`md` / `txt` / `pdf` / `docx` / `png` / `jpg`) in your **current project folder** into validated YAML quiz packs for the [StudyAndGame](https://github.com/yhjang-tera/studyandgame) desktop app.
+Convert study material (`md` / `txt` / `pdf` / `docx` / `png` / `jpg`) in your **current project folder** into validated YAML quiz packs for the [StudyAndGame](https://github.com/joyuno/studyandgame) desktop app.
 
 After you generate a pack here, head to the **studyandgame** repo to install the desktop app and drop the `.yml` onto it.
 
@@ -35,7 +35,7 @@ The plugin's "better method" for non-text formats is **Claude Code's built-in mu
 
 ```bash
 # Clone next to your study material
-git clone https://github.com/yhjang-tera/workbook.git ~/path/to/workbook
+git clone https://github.com/joyuno/workbook.git ~/path/to/workbook
 
 # Inside Claude Code, install the plugin
 /plugin install ~/path/to/workbook
@@ -107,4 +107,4 @@ MIT.
 
 ## See also
 
-- **[studyandgame](https://github.com/yhjang-tera/studyandgame)** — the desktop quiz game that consumes the YAML packs you generate here.
+- **[studyandgame](https://github.com/joyuno/studyandgame)** — the desktop quiz game that consumes the YAML packs you generate here.
