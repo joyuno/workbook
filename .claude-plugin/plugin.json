@@ -1,0 +1,11 @@
+{
+  "name": "workbook",
+  "version": "0.1.0",
+  "description": "Convert study material (md / txt / pdf / docx / images) in your current project folder into validated YAML quiz packs for the StudyAndGame desktop app. Multi-format ingestion via Claude Code's built-in multimodal Read + pandoc fallback for docx.",
+  "author": {
+    "name": "StudyAndGame"
+  },
+  "homepage": "https://github.com/yhjang-tera/studyandgame",
+  "license": "MIT",
+  "keywords": ["study", "quiz", "yaml", "learning", "pdf", "docx", "markdown", "ocr"]
+}

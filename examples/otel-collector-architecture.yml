@@ -1,0 +1,224 @@
+meta:
+  title: OpenTelemetry Collector 아키텍처와 배포
+  version: 0.1.0
+  default_time: 30
+  set_time: 420
+  tags: [opentelemetry, collector, architecture, pipeline]
+
+questions:
+  - type: mcq
+    q: OpenTelemetry Collector의 핵심 데이터 흐름 단위 이름은?
+    choices:
+      - flow
+      - channel
+      - stream
+      - pipeline
+    answer: 3
+    explanation: |
+      docs(architecture.md) — "Data receiving, processing, and exporting are done using pipelines".
+      pipeline = receivers → processors → exporters의 한 경로.
+    tags: [pipeline, fundamentals]
+
+  - type: mcq
+    q: Collector pipeline이 지원하는 telemetry 데이터 타입 세 가지는?
+    choices:
+      - traces / metrics / logs
+      - events / spans / annotations
+      - spans / measures / events
+      - http / grpc / database
+    answer: 0
+    explanation: |
+      docs(architecture.md) — "Pipelines can operate on three telemetry data types: traces, metrics, and logs".
+    tags: [signals, data-types]
+
+  - type: mcq
+    q: Pipeline 한 개의 구성 요소 순서는?
+    choices:
+      - receivers → exporters → processors
+      - exporters → processors → receivers
+      - receivers → processors → exporters
+      - processors → receivers → exporters
+    answer: 2
+    explanation: |
+      docs(architecture.md) — pipeline = "A set of receivers... A series of optional processors... A set of exporters which get the data from processors and send it outside".
+    tags: [pipeline, components]
+
+  - type: mcq
+    q: 마지막 processor가 여러 exporter에 데이터를 보내는 메커니즘은?
+    choices:
+      - round-robin 분산 (한 exporter에만 전달)
+      - fanoutconsumer로 각 exporter에 데이터 element의 복사본을 전달
+      - 첫 exporter만 동기, 나머지는 비동기
+      - exporter 우선순위로 정렬 후 단일 전달
+    answer: 1
+    explanation: |
+      docs(architecture.md) — "Each exporter gets a copy of each data element. The last processor uses a fanoutconsumer to send the data to multiple exporters".
+    tags: [pipeline, fanout]
+
+  - type: mcq
+    q: 같은 타입 pipeline을 여러 개 정의할 때 사용하는 구분자는?
+    choices:
+      - 별도 service 블록 분리
+      - 이름에 `/<name>` 접미사 (예 `traces/dev`, `traces/2`)
+      - 별도 config 파일 분리만 가능
+      - 정수 인덱스
+    answer: 1
+    explanation: |
+      docs(architecture.md) — "The configuration uses composite key names in the form of type[/name]".
+      OmniTrace의 `logs` / `logs/syslog`도 이 패턴.
+    tags: [pipeline, naming]
+
+  - type: mcq
+    q: 같은 receiver를 여러 pipeline에 동시에 등록할 수 있는가?
+    choices:
+      - 항상 불가능
+      - 가능 — 여러 `pipelines`의 `receivers` 키에 같은 receiver 이름을 적으면 됨
+      - 한 traces / 한 metrics / 한 logs까지만 가능
+      - 가능하지만 별도 instance가 만들어짐
+    answer: 1
+    explanation: |
+      docs(architecture.md) — "It is also possible to configure the same receiver to send the same received data to multiple pipelines. This can be done by listing the same receiver in the receivers key of several pipelines".
+    tags: [pipeline, receiver-sharing]
+
+  - type: mcq
+    q: Collector configuration의 4가지 pipeline component class가 아닌 것은?
+    choices:
+      - Receivers
+      - Processors
+      - Exporters
+      - Routers
+    answer: 3
+    explanation: |
+      docs(configuration.md) — "four classes of pipeline components: Receivers / Processors / Exporters / Connectors".
+      Routers는 표준 클래스 이름이 아님.
+    tags: [components, classes]
+
+  - type: mcq
+    q: Collector configuration 기본 파일 경로는?
+    choices:
+      - '`~/.otelcol/config.yaml`'
+      - '`/etc/<otel-directory>/config.yaml`'
+      - '`/var/lib/otelcol/config.yaml`'
+      - '`/opt/otelcol/config.yaml`'
+    answer: 1
+    explanation: |
+      docs(configuration.md) — "By default, the Collector configuration is located in /etc/<otel-directory>/config.yaml, where <otel-directory> can be otelcol, otelcol-contrib, or another value".
+    tags: [configuration, location]
+
+  - type: mcq
+    q: '`--config` 플래그가 지원하지 않는 provider scheme은?'
+    choices:
+      - file
+      - env
+      - yaml
+      - sqlite
+    answer: 3
+    explanation: |
+      docs(configuration.md) — "Currently, the OpenTelemetry Collector supports the following providers for scheme: file, env, yaml, http, https".
+    tags: [configuration, providers]
+
+  - type: mcq
+    q: Collector 설정 파일의 문법을 검증하는 명령은?
+    choices:
+      - '`otelcol check --config=<file>`'
+      - '`otelcol validate --config=<file>`'
+      - '`otelcol lint <file>`'
+      - '`otelcol verify <file>`'
+    answer: 1
+    explanation: |
+      docs(configuration.md) — "To validate a configuration file, use the validate command. For example: otelcol validate --config=customconfig.yaml".
+    tags: [configuration, validate]
+
+  - type: mcq
+    q: Agent deployment pattern의 핵심 특징은?
+    choices:
+      - 중앙 1대 Collector가 모든 트래픽을 받음
+      - 애플리케이션 옆 (sidecar / DaemonSet / 같은 host)에 Collector 배치
+      - SDK가 직접 backend로 전송
+      - Collector가 클라이언트 라이브러리로 embed
+    answer: 1
+    explanation: |
+      docs(deploy-agent.md) — "signals are sent to a Collector instance that runs alongside the application or on the same host, such as a sidecar or DaemonSet".
+    tags: [deploy, agent]
+
+  - type: mcq
+    q: Gateway deployment pattern에서 trace ID 기준으로 같은 trace의 모든 span을 같은 두 번째-tier collector로 보내야 할 때 사용하는 exporter는?
+    choices:
+      - otlp exporter
+      - tail sampling exporter
+      - load-balancing exporter (trace ID / service-name aware)
+      - prometheus exporter
+    answer: 2
+    explanation: |
+      docs(deploy-gateway.md) — "The first tier Collector has a pipeline configured with the Trace ID/service-name-aware load-balancing exporter... all spans for a given trace reach the same Collector instance where the tail sampling policy is applied".
+    tags: [deploy, gateway, load-balancing]
+
+  - type: mcq
+    q: scaling 단계에서 exporter queue가 어느 수준에 도달하면 scale up 권장인가?
+    choices:
+      - capacity의 30%
+      - capacity의 60~70%
+      - capacity의 90%
+      - capacity 초과 시점
+    answer: 1
+    explanation: |
+      docs(scaling.md) — "monitor queue size and consider scaling up when it reaches 60-70% of capacity, and scaling down if it's consistently low".
+    tags: [scaling, queue]
+
+  - type: mcq
+    q: memory_limiter processor가 데이터 거부를 시작했음을 알리는 핵심 메트릭은?
+    choices:
+      - otelcol_processor_refused_spans (그리고 다른 signal 타입 카운터)
+      - otelcol_memory_used_bytes
+      - otelcol_oom_count
+      - otelcol_dropped_records
+    answer: 0
+    explanation: |
+      docs(scaling.md) — "the metric otelcol_processor_refused_spans... The same metric exists for all other telemetry data types. If data is being refused from entering the pipeline too often, you'll probably want to scale up".
+    tags: [scaling, metrics]
+
+  - type: mcq
+    q: scaling을 위한 권장 최소 replica 수는?
+    choices:
+      - '1'
+      - '2'
+      - 3 — resilience
+      - '5'
+    answer: 2
+    explanation: |
+      docs(scaling.md) — "maintaining a minimum number of replicas, for example three, for resilience".
+    tags: [scaling, replicas]
+
+  - type: ox
+    q: 같은 exporter를 여러 pipeline에 포함시킬 수 있다.
+    answer: true
+    explanation: |
+      docs(architecture.md) — "The same receiver can be included in multiple pipelines and multiple pipelines can include the same exporter".
+    time: 15
+    tags: [pipeline, exporter-sharing]
+
+  - type: ox
+    q: Collector configuration에서 endpoint를 `0.0.0.0`으로 두는 것은 모든 환경에서 권장된다.
+    answer: false
+    explanation: |
+      docs(configuration.md) — "it is generally preferable to bind endpoints to localhost when all clients are local, our example configurations use the 'unspecified' address 0.0.0.0 as a convenience. The Collector currently defaults to 0.0.0.0, but the default will be changed to localhost in the near future".
+      DoS 공격 노출 위험.
+    time: 20
+    tags: [configuration, security]
+
+  - type: ox
+    q: '`--config` 옵션은 여러 번 지정해 여러 파일을 merge할 수 있다.'
+    answer: true
+    explanation: |
+      docs(configuration.md) — "You can also provide multiple configurations using multiple files at different paths... Pass in multiple file paths at the command line".
+    time: 15
+    tags: [configuration, multi-config]
+
+  - type: ox
+    q: Collector pipeline에서 traces 타입 pipeline에 metrics receiver를 포함시키면 자동으로 metrics 데이터를 traces로 변환해준다.
+    answer: false
+    explanation: |
+      docs(architecture.md) — "Receivers, processors, and exporters used in a pipeline must support the particular data type, otherwise the pipeline.ErrSignalNotSupported exception is reported when the configuration loads".
+      signal 타입 변환은 connector를 통해야 한다.
+    time: 25
+    tags: [pipeline, signal-mismatch]
