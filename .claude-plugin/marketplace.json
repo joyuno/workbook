@@ -6,7 +6,10 @@
   "plugins": [
     {
       "name": "workbook",
-      "source": ".",
+      "source": {
+        "source": "directory",
+        "path": ".."
+      },
       "description": "Convert study material (md / txt / pdf / docx / images) into validated YAML quiz packs for StudyAndGame."
     }
   ]
