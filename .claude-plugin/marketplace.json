@@ -1,4 +1,5 @@
 {
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "workbook",
   "owner": {
     "name": "joyuno"
@@ -6,11 +7,11 @@
   "plugins": [
     {
       "name": "workbook",
-      "source": {
-        "source": "directory",
-        "path": ".."
-      },
-      "description": "Convert study material (md / txt / pdf / docx / images) into validated YAML quiz packs for StudyAndGame."
+      "source": "./workbook",
+      "description": "Convert study material (md / txt / pdf / docx / images) into validated YAML quiz packs for StudyAndGame.",
+      "homepage": "https://github.com/joyuno/workbook",
+      "license": "MIT",
+      "keywords": ["study", "quiz", "yaml", "learning", "pdf", "docx", "markdown"]
     }
   ]
 }

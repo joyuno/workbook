@@ -12,10 +12,10 @@ The StudyAndGame desktop app intentionally ships without any LLM dependency — 
 
 | Component | Purpose |
 |-----------|---------|
-| `skills/workbook/SKILL.md` | Ingestion strategy per file type · schema · quoting rules · quality gates · worked example. Auto-loads when a request matches. |
-| `commands/workbook.md` | `/workbook <path> [title] [counts]` — convert a file or folder into a pack. |
-| `commands/workbook-verify.md` | `/workbook-verify <path.yml>` — dry-run schema check before dropping into the app. |
-| `examples/` | Reference `.yml` packs that pass the StudyAndGame validator. |
+| `workbook/skills/workbook/SKILL.md` | Ingestion strategy per file type · schema · quoting rules · quality gates · worked example. Auto-loads when a request matches. |
+| `workbook/commands/workbook.md` | `/workbook <path> [title] [counts]` — convert a file or folder into a pack. |
+| `workbook/commands/workbook-verify.md` | `/workbook-verify <path.yml>` — dry-run schema check before dropping into the app. |
+| `workbook/examples/` | Reference `.yml` packs that pass the StudyAndGame validator. |
 
 ## Supported source formats
 
@@ -87,7 +87,7 @@ questions:
     explanation: <required>
 ```
 
-Full spec lives in [`skills/workbook/SKILL.md`](skills/workbook/SKILL.md).
+Full spec lives in [`workbook/skills/workbook/SKILL.md`](workbook/skills/workbook/SKILL.md).
 
 ## Korean content tip
 
