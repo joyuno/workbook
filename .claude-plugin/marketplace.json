@@ -1,0 +1,13 @@
+{
+  "name": "workbook",
+  "owner": {
+    "name": "joyuno"
+  },
+  "plugins": [
+    {
+      "name": "workbook",
+      "source": ".",
+      "description": "Convert study material (md / txt / pdf / docx / images) into validated YAML quiz packs for StudyAndGame."
+    }
+  ]
+}

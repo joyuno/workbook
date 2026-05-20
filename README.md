@@ -33,11 +33,14 @@ The plugin's "better method" for non-text formats is **Claude Code's built-in mu
 
 ## Installation
 
-Inside Claude Code:
+Inside Claude Code — two steps (add the marketplace, then install the plugin from it):
 
 ```text
-/plugin install joyuno/workbook
+/plugin marketplace add joyuno/workbook
+/plugin install workbook@workbook
 ```
+
+`/plugin install joyuno/workbook` (single-step) does **not** work — `/plugin install` expects a plugin name from an already-added marketplace, not a repo path. The marketplace name (`workbook`) is derived from the repo name.
 
 Restart Claude Code (or reload the plugin list) and the `/workbook` and `/workbook-verify` commands appear.
 
