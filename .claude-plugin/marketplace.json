@@ -7,7 +7,12 @@
   "plugins": [
     {
       "name": "workbook",
-      "source": "./workbook",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/joyuno/workbook.git",
+        "path": "workbook",
+        "ref": "main"
+      },
       "description": "Convert study material (md / txt / pdf / docx / images) into validated YAML quiz packs for StudyAndGame.",
       "homepage": "https://github.com/joyuno/workbook",
       "license": "MIT",
