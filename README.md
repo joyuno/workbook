@@ -37,10 +37,10 @@ Inside Claude Code — two steps (add the marketplace, then install the plugin f
 
 ```text
 /plugin marketplace add joyuno/workbook
-/plugin install workbook@workbook
+/plugin install workbook@joyuno-workbook
 ```
 
-`/plugin install joyuno/workbook` (single-step) does **not** work — `/plugin install` expects a plugin name from an already-added marketplace, not a repo path. The marketplace name (`workbook`) is derived from the repo name.
+`/plugin install joyuno/workbook` (single-step) does **not** work — `/plugin install` expects a plugin name from an already-added marketplace, not a repo path. The marketplace registers under the `name` field in `marketplace.json` (`joyuno-workbook`), and the plugin name is `workbook`, so the `@` suffix targets the marketplace.
 
 Restart Claude Code (or reload the plugin list) and the `/workbook` and `/workbook-verify` commands appear.
 
