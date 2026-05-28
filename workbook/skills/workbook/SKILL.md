@@ -102,6 +102,10 @@ questions:                                          # required, length >= 1
     explanation: <why correct + source quote>
     time: <int seconds, optional>
     tags: [<tag>, ...]
+    # ── Prerequisite Knowledge Graph fields (optional, see §12) ──────
+    concept: '<kebab-case-concept-id>'              # what this question teaches (1 atom)
+    prereq: ['<concept-id>', ...]                   # concepts the learner must know first
+    bloom: <recall | understand | apply | analyze>  # cognitive level (Bloom's taxonomy)
 
   - type: ox
     q: '<proposition>'
@@ -109,9 +113,15 @@ questions:                                          # required, length >= 1
     explanation: <explanation>
     time: <int seconds, optional>
     tags: [<tag>, ...]
+    concept: '<kebab-case-concept-id>'              # see §12
+    prereq: ['<concept-id>', ...]
+    bloom: <recall | understand | apply | analyze>
 ```
 
 **Only `mcq` and `ox` are supported.** `typing` / `fill` / `match` are rejected with `ERR_UNKNOWN_TYPE`.
+
+`concept` / `prereq` / `bloom` are **optional** — packs without them still parse,
+but a pack that opts in must keep them consistent across its questions (§12).
 
 ---
 
@@ -302,3 +312,103 @@ questions:
 6. ❌ `meta.title` over 80 chars (Korean chars count)
 7. ❌ Trying to install OCR tools — use Claude's built-in multimodal Read first
 8. ❌ Processing > 5 files in a folder without user confirmation
+9. ❌ Naming `concept` after the question's *tag* instead of the atom it teaches
+    (e.g. `concept: 'mergetree'` is too broad — use `'mergetree-primary-key'`)
+10. ❌ Listing `prereq` items that no question in any related pack actually teaches
+    — the chain dead-ends. Either teach that prereq first or drop the citation.
+
+---
+
+## 12. ★ Prerequisite Knowledge Graph (PKG) — terminology-first authoring
+
+**Why it exists.** A learner who cannot answer "What is a *MergeTree*?" cannot
+benefit from a question about *primary key uniqueness in MergeTree*. The
+question is unanswerable not because it is wrong but because every load-bearing
+noun in it is an unknown. Conventional flat quiz packs ignore this and burn
+the learner's attention on the wrong rung.
+
+Recent educational research models this exactly: **Prerequisite Knowledge
+Graphs** ([ACE, JEDM 2025](https://jedm.educationaldatamining.org/index.php/JEDM/article/view/737),
+[RPKT, arXiv 2508.11892](https://arxiv.org/pdf/2508.11892)) represent each
+atomic concept as a node and each "you must know Y before X" edge explicitly.
+A question that probes concept X *implicitly assumes* its prereq closure —
+spell that out so a downstream tool can detect gaps.
+
+We pair PKG with **spaced retrieval** (the +25% meta-analysis effect from
+[IJASSR 2025](https://journals.zeuspress.org/index.php/IJASSR/article/view/425)):
+PKG decides *what* to teach next; SRS decides *when* to revisit it. The
+StudyAndGame app already runs SRS via 오답노트 — PKG is the missing half.
+
+### 12.1 Filling `concept`, `prereq`, `bloom`
+
+For each question, before writing the YAML body, answer three questions:
+
+1. **`concept`** — *What single atom does a correct answer prove the learner
+   has internalised?* One concept per question. kebab-case ID, scoped to the
+   domain (e.g. `mergetree-sparse-index`, not `sparse-index` which is ambiguous
+   across DBs). If you cannot name one, the question is testing more than one
+   thing — split it or rewrite.
+
+2. **`prereq`** — *What concepts must the learner already understand for the
+   question to even make sense?* List them as concept IDs. Two grades of
+   inclusion:
+   - **Required**: without it, the question is gibberish.
+     `mergetree-primary-key-uniqueness` needs `rdb-primary-key`, `mergetree`,
+     `sparse-index`.
+   - **Excluded**: ambient prior knowledge (basic SQL, integers, English) —
+     don't list these. The list stops at the boundary of *what this pack
+     domain teaches*.
+
+3. **`bloom`** — *What kind of cognitive work does the question demand?*
+   - `recall` — definition lookup. ("MergeTree는 어떤 종류의 엔진?")
+   - `understand` — explain in own words / paraphrase. ("primary key가 unique
+     를 보장하지 않는 이유?")
+   - `apply` — use the concept on a new instance. ("이 ORDER BY 표현식으로
+     생성된 테이블에서 다음 쿼리는 인덱스를 쓸 수 있는가?")
+   - `analyze` — compare/decompose/debug. ("두 partition 설계 중 어느 쪽이
+     SELECT FD 폭증을 막는가?")
+
+### 12.2 Graph completeness — the "no orphan prereq" rule
+
+If a question lists `prereq: ['column-store']`, then **some other question in
+the same pack OR a referenced sibling pack must have `concept: 'column-store'`
+at a lower bloom level (typically `recall` or `understand`).** Otherwise the
+chain dead-ends and a learner who lacks `column-store` has no path forward.
+
+Sibling packs are tracked via `meta.references`:
+
+```yaml
+meta:
+  title: ClickHouse MergeTree 심화
+  references:
+    - clickhouse-fundamentals          # this pack's prereq pool extends to here
+```
+
+When emitting a multi-pack series (fundamentals → core → advanced), build
+**bottom-up**: write the fundamentals concepts first, then the next layer
+gets to reference them in `prereq`. Never list a `prereq` that does not exist
+yet — the gap is itself a bug.
+
+### 12.3 The bloom progression rule
+
+Within one pack: order questions roughly `recall → understand → apply →
+analyze`. Within one **concept across packs**: introduce it at `recall` in
+the fundamentals pack and only escalate to `apply` / `analyze` once that
+exists. A pack that opens with an `analyze` on a concept never taught at
+`recall` is a difficulty cliff — same failure mode the PKG was built to
+prevent.
+
+### 12.4 Self-check for PKG packs
+
+Before emitting:
+
+- [ ] Every `concept` is unique within the pack (or split the question)
+- [ ] Every `prereq` ID is either (a) the `concept` of an earlier question
+      in this pack at lower bloom, or (b) a `concept` taught by a pack in
+      `meta.references`
+- [ ] First question of the pack has empty or near-empty `prereq` — it is
+      the root
+- [ ] Pack ends at bloom `apply` or `analyze` — recall-only packs are
+      flashcards, not workbooks
+- [ ] `bloom` progression is monotonic-non-decreasing across the pack
+      (small backsteps OK to introduce a new concept)
