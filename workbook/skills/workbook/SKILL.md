@@ -412,3 +412,44 @@ Before emitting:
       flashcards, not workbooks
 - [ ] `bloom` progression is monotonic-non-decreasing across the pack
       (small backsteps OK to introduce a new concept)
+- [ ] **Explanation-body audit** (§12.5)
+
+### 12.5 The explanation-body audit ("tail-of-tail" rule)
+
+The PKG `prereq` field nails *what must I have learnt before this question*.
+But the human-readable `explanation:` is free Korean + English text and can
+silently introduce another domain term the learner has not seen yet — at
+which point the chain breaks and the learner googles instead of clicking
+the next prereq chip in our UI.
+
+**Rule.** If the `explanation:` of question Q mentions a multi-word domain
+term that *is* a `concept` of some other question in this pack (or any
+referenced sibling pack), then either:
+
+1. **List it in `Q.prereq`** so the learner can jump to the teacher
+   question. This is the default.
+2. **Forward reference (acceptable)**: if the cited concept is taught
+   *later* in the same pack (so a prereq edge would create a cycle), drop
+   the specific term from the explanation and replace it with a generic
+   pointer — e.g. *"sparse index의 기반이다"* → *"그 정렬된 데이터 위에
+   어떤 인덱스가 얹히는지는 뒤에서 별도 학습"*. The learner is told a
+   later topic exists without being asked to recognise a term they have
+   not yet been taught.
+
+**What this catches that §12.2 misses.** §12.2 only validates `prereq`
+field values. A question can have a perfectly closed `prereq` list and
+still have an `explanation:` paragraph that drops six unknown nouns on the
+learner. That paragraph IS prerequisite content, even if it is not in the
+field.
+
+**How to run the audit.** Studyandgame ships
+`tests/debug_explanation_audit.gd` which loads every pack under
+`res://data/quizzes/`, builds a `multi-word phrase → concept_id` map from
+every `concept` value with ≥ 2 hyphen-separated parts, scans each
+`explanation:` for those phrases, and flags hits not present in that
+question's `prereq`. The exit code is zero only when the report is empty.
+
+Single-word concept IDs are deliberately excluded — they overmatch their
+own teacher's explanation. If a multi-word phrase you cite intentionally
+*isn't* a concept (e.g. a SQL keyword everyone is assumed to know), the
+audit ignores it, which is correct.
