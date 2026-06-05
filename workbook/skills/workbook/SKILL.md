@@ -102,6 +102,9 @@ questions:                                          # required, length >= 1
     explanation: <why correct + source quote>
     time: <int seconds, optional>
     tags: [<tag>, ...]
+    # ── Vocab gloss cards (optional, language packs — see §13) ───────
+    glossary:                                       # 'word｜reading｜meaning' scalars
+      - '<word>｜<reading>｜<meaning>'              # NOT a nested map (parser limit)
     # ── Prerequisite Knowledge Graph fields (optional, see §12) ──────
     concept: '<kebab-case-concept-id>'              # what this question teaches (1 atom)
     prereq: ['<concept-id>', ...]                   # concepts the learner must know first
@@ -453,3 +456,50 @@ Single-word concept IDs are deliberately excluded — they overmatch their
 own teacher's explanation. If a multi-word phrase you cite intentionally
 *isn't* a concept (e.g. a SQL keyword everyone is assumed to know), the
 audit ignores it, which is correct.
+
+---
+
+## 13. Vocab gloss cards (language packs — JLPT / 漢字 / 어휘)
+
+For language-learning packs, a foreign-language word in the **question stem
+or passage** is itself an obstacle: the learner can't answer a question they
+can't even read. The optional `glossary` field attaches reading + meaning
+cards that StudyAndGame renders **below the question, before the choices**.
+
+### 13.1 Format — delimited scalars, NOT a nested map
+
+The in-tree YAML parser (`yaml_pack_parser.gd`) is a schema-scoped subset: it
+parses block lists of **scalars** but not block lists of **maps**. So a
+glossary entry is one single-quoted scalar `'word｜reading｜meaning'`, split
+by the app on the fullwidth bar `｜` (U+FF5C):
+
+```yaml
+  - type: mcq
+    q: '「悪天候（　）、試合は予定どおり行われた。」빈칸에 알맞은 것은?'
+    choices: [ ... ]
+    answer: 3
+    glossary:
+      - '悪天候｜あくてんこう｜악천후'
+      - '試合｜しあい｜시합'
+      - '予定どおり｜よていどおり｜예정대로'
+    explanation: ' ... '
+```
+
+- Exactly three `｜`-separated fields: **word · reading · meaning**.
+- Reading may be empty (`'ケチ｜｜인색함, 구두쇠'`) for words already in kana.
+- Meaning is in the learner's language (Korean here); commas inside it are fine.
+
+### 13.2 Which words to gloss (the rule)
+
+- Gloss words at roughly **N3 level and above** (N3 / N2 / N1). Skip N4/N5
+  basics (私, 食べる, 学校) — glossing them is noise.
+- **Never gloss the tested word or the answer.** On a reading/meaning question
+  the target word IS the question; a card would hand over the answer. Those
+  questions get no glossary. Gloss only the *surrounding* words.
+- Order cards as the words appear in the stem.
+
+### 13.3 Self-check
+
+- [ ] Every glossary entry has exactly three `｜` fields (word non-empty).
+- [ ] The answer / tested word is absent from the glossary.
+- [ ] Only N3+ words are carded; trivial words omitted.
