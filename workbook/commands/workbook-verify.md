@@ -17,6 +17,7 @@ You have been invoked through the `/workbook-verify` slash command. The user wan
    - [ ] All `q:` and `choices:` items with Korean / colons / asterisks / pure-digits are single-quoted
    - [ ] `explanation` present (warn if missing)
    - [ ] Answer-index spread (flag if one index dominates)
+   - [ ] **Single defensible answer (semantic — read the content, don't just lint)**: for every question, confirm that exactly ONE choice is supported and every other choice is *refutable* from the passage/stem alone. If two or more choices are equally consistent with the given text and nothing in the text rules the others out, the question is ambiguous → **FAIL** it. See workbook skill §6.1.
 4. For each issue, output `line N: <problem> — <fix suggestion>`.
 5. End with a single summary line: `OK — N mcq + M ox, no issues` or `N issues found — see above`.
 

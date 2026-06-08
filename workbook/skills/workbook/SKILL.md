@@ -101,7 +101,10 @@ questions:                                          # required, length >= 1
     answer: <0-based int, 0 <= answer < len(choices)>
     explanation: <why correct + source quote>
     time: <int seconds, optional>
+    reward: <int >= 1, optional, default 1>         # 강화권 배수 — 시간이 오래 걸리는 유형(독해)에 2~3 (§14)
     tags: [<tag>, ...]
+    # ── Reading passage (optional — 독해 문제; see §14) ──────────────
+    passage: '<지문 본문. 정답은 반드시 이 지문에서 도출>'  # 있으면 문제 위에 지문 패널로 표시
     # ── Vocab gloss cards (optional, language packs — see §13) ───────
     glossary:                                       # 'word｜reading｜meaning' scalars
       - '<word>｜<reading>｜<meaning>'              # NOT a nested map (parser limit)
@@ -191,9 +194,37 @@ Cases that break if emitted as plain scalar (all rejected):
 - [ ] Answer is quotable from source
 - [ ] explanation has ≥ 1 line
 - [ ] mcq distractors are plausible
+- [ ] **Single defensible answer** — the marked answer is uniquely correct, every other choice refutable (§6.1)
 - [ ] Across the pack: answer indices are spread
 
 If a question fails the check, **skip it** — quality over count.
+
+### 6.1 Single defensible answer (정답 유일성)
+
+A distractor must be **plausible but refutable** — plausible enough to tempt,
+yet provably wrong from the source/passage. The failure mode to kill: a choice
+that the given text supports **just as well as** the marked answer. Then there
+are really two right answers and the learner is punished for a coin-flip.
+
+**The trap (real example).** Passage/stem:
+
+> その国の主要（　）は半導体と自動車だ。
+> choices: ['輸出品', '輸入品', '生産品', '消費財'] — answer: 0 (輸出品)
+
+半導体と自動車が主要な **輸出品** なのか **輸入品** なのかは、この一文だけでは
+決められない。輸出品も輸入品も文脈上ともに成立する → **曖昧問題、廃棄**。
+
+**The fix — two options:**
+1. **Disambiguate the text.** Add a sentence that excludes the rival choice:
+   「その国は半導体と自動車を世界中に**輸出して**外貨を稼いでいる。」→ 輸入品が排除され、輸出品が唯一解になる。
+2. **Drop the rival distractor.** Replace 輸入品 with a clearly-refutable option.
+
+**Authoring test — for EACH non-answer choice ask:** "Is there a specific
+sentence in the passage/stem that rules this out?" If you can't point to one for
+some distractor, that distractor is either the answer's twin (ambiguous → fix or
+drop) or pure noise (too easy → strengthen). This applies to ALL mcq, but is
+most dangerous in 内容理解/穴埋め where two choices share a category
+(輸出↔輸入, 増加↔減少, 原因↔結果, 賛成↔反対).
 
 ---
 
@@ -503,3 +534,59 @@ by the app on the fullwidth bar `｜` (U+FF5C):
 - [ ] Every glossary entry has exactly three `｜` fields (word non-empty).
 - [ ] The answer / tested word is absent from the glossary.
 - [ ] Only N3+ words are carded; trivial words omitted.
+
+---
+
+## 14. Reading-passage questions (독해 — JLPT 内容理解 / 主張理解 / 情報検索)
+
+A reading question is still **`type: mcq`** — the answer mechanic is unchanged
+(pick one of the choices). What makes it a reading question is two optional
+fields:
+
+```yaml
+- type: mcq
+  passage: '<지문 본문 — 정답이 반드시 이 지문에서 도출되어야 함>'
+  q: '<지문에 대한 질문>'
+  choices:
+    - '<선택지 1>'
+    - '<선택지 2>'
+    - '<선택지 3>'
+    - '<선택지 4>'
+  answer: <0-based int>
+  explanation: '<정답 근거 — 지문의 어느 문장에서 나왔는지 인용>'
+  time: 90            # 독해는 한 문제 푸는 데 오래 걸림 — §14.1
+  reward: 3           # 시간 대비 보상 — §14.2
+```
+
+`passage` shows as a scrollable panel **above** the question. Multiple
+consecutive questions may repeat the **same** `passage` string to model "one
+passage, several questions" (内容理解 中文/長文, 統合理解).
+
+### 14.1 Time per reading question (`time`)
+
+JLPT 독해 한 문제당 평균 소요시간 기준. 지문 길이로 정한다:
+
+| 지문 유형 | 분량 | `time` |
+|-----------|------|--------|
+| 短文 (内容理解·短) | ~200자 | `60` |
+| 中文 (内容理解·中) | ~500자 | `90` |
+| 長文 / 主張理解 | ~900자 | `120` |
+| 情報検索 (광고·표) | 스캔형 | `90` |
+
+### 14.2 Reward multiplier (`reward`)
+
+기본 어휘·문법 문제는 `reward` 생략(=1). 독해는 시간이 ~3배 들므로
+보상도 비례시킨다 — 短文 `2`, 中文·長文 `3`. 過하게 주지 말 것(밸런스 붕괴).
+
+### 14.3 Rules
+
+- **정답은 100% 지문에서 도출** — 외부 지식 없이 지문만으로 답이 나와야 한다.
+  지문에 근거가 없으면 그 문제는 버린다 (No hallucination 원칙 유지).
+- `passage` 도 한국어/CJK는 작은따옴표로 감쌀 것 (§4 동일 규칙).
+- 지문 속 N3+ 어휘는 `glossary` 로 카드화 가능하되, **정답 단서가 되는 단어는 제외**.
+
+### 14.4 Self-check
+
+- [ ] `passage` 의 어느 문장이 정답 근거인지 `explanation` 에 인용했다.
+- [ ] `time` 이 지문 분량과 맞는다 (§14.1).
+- [ ] `reward` 가 1~3 범위, 어휘/문법 문제엔 reward 안 줬다.
