@@ -102,6 +102,7 @@ questions:                                          # required, length >= 1
     explanation: <why correct + source quote>
     time: <int seconds, optional>
     tags: [<tag>, ...]
+    figure: <one of the supported names>            # optional — app renders a rotatable 3D unit cell (§14)
     # ── Vocab gloss cards (optional, language packs — see §13) ───────
     glossary:                                       # 'word｜reading｜meaning' scalars
       - '<word>｜<reading>｜<meaning>'              # NOT a nested map (parser limit)
@@ -192,6 +193,7 @@ Cases that break if emitted as plain scalar (all rejected):
 - [ ] explanation has ≥ 1 line
 - [ ] mcq distractors are plausible
 - [ ] Across the pack: answer indices are spread
+- [ ] `figure` is empty, or one of the §14 supported names — and attached only to a question that is actually *about* that structure
 
 If a question fails the check, **skip it** — quality over count.
 
@@ -204,6 +206,12 @@ If a question fails the check, **skip it** — quality over count.
 3. **YAML body inside a single ```yaml fenced block.** Nothing else.
 
 The user copies the YAML body verbatim into the suggested `.yml` filename and drops it onto StudyAndGame.
+
+**Figure trigger (user choice — see §14).** Default = attach nothing. If the
+content has **no** renderable structure, never mention figures. If you detect
+N figure-eligible questions and the user did *not* already pass a `figures` /
+`그림` flag, **ask once before emitting** — e.g. `"구조 그림(3D)을 N개 문항에
+붙일까요? [예/아니오]"` — and add `figure:` lines only if the user opts in.
 
 ---
 
@@ -503,3 +511,98 @@ by the app on the fullwidth bar `｜` (U+FF5C):
 - [ ] Every glossary entry has exactly three `｜` fields (word non-empty).
 - [ ] The answer / tested word is absent from the glossary.
 - [ ] Only N3+ words are carded; trivial words omitted.
+
+---
+
+## 14. 구조 시각화 (figure) — 3D 단위격자 자동 첨부
+
+For crystallography / solid-state / 재료공학 packs, a question *about a crystal
+structure* is much clearer with the structure in front of the learner. The
+optional per-question `figure` field tells StudyAndGame to render a **rotatable
+3D unit cell** below the question. It is purely a visual aid — the YAML still
+parses and grades identically without it.
+
+**This field is OPTIONAL and off by default.** Attach it only when (a) the
+question is genuinely *about* a structure the app can render, AND (b) the user
+has opted in (see §14.3 trigger). When the source has no crystal structure,
+attach nothing and say nothing.
+
+### 14.1 Supported figure names (the ONLY valid values)
+
+The app renderer and this list are kept in **exact sync**. A `figure:` value
+outside this list is **silently ignored** by the app (no error, no picture) —
+so never invent one.
+
+| `figure` | 구조 / structure | Keyword triggers (in `q` or `explanation`) |
+|----------|------------------|---------------------------------------------|
+| `sc`         | 단순입방 / simple cubic | 단순입방, simple cubic, SC |
+| `bcc`        | 체심입방 / body-centered cubic | 체심입방, body-centered cubic, BCC |
+| `fcc`        | 면심입방 / face-centered cubic | 면심입방, face-centered cubic, FCC |
+| `diamond`    | 다이아몬드 구조 / diamond | 다이아몬드 구조, diamond, Si, Ge, silicon, germanium |
+| `hcp`        | 육방조밀 / hexagonal close-packed | 육방조밀, hexagonal close-packed, HCP |
+| `zincblende` | 섬아연광 / zinc blende | 섬아연광, zinc blende, sphalerite, GaAs, ZnS |
+| `rocksalt`   | 암염 / rock salt | 암염, rock salt, NaCl, halite, sodium chloride |
+| `cscl`       | 염화세슘 / cesium chloride | 염화세슘, cesium chloride, CsCl |
+| `fluorite`   | 형석 / fluorite | 형석, fluorite, CaF2, calcium fluoride |
+
+### 14.2 When to attach (keyword auto-detection)
+
+For each question, scan the `q` and `explanation` text for the keywords above:
+
+- A hit → map to the matching `figure` name (e.g. `면심입방`/`FCC`/`단위격자`
+  context + `유효 원자` → `figure: fcc`; `섬아연광`/`GaAs` → `figure: zincblende`;
+  `암염`/`NaCl` → `figure: rocksalt`; `다이아몬드 구조`/`Si` → `figure: diamond`;
+  `체심입방` → `figure: bcc`; `염화세슘`/`CsCl` → `figure: cscl`; `형석`/`CaF2`
+  → `figure: fluorite`).
+- **On-topic only.** Attach the figure only if the structure *is the subject*
+  of the question — e.g. counting effective atoms, coordination number, or
+  packing of that cell. A question that merely name-drops "NaCl 같은 이온결정"
+  while testing something unrelated (e.g. 격자에너지 공식) gets **no** figure.
+- **Never invent a name** outside §14.1. If the structure isn't in the list
+  (e.g. perovskite, wurtzite), attach nothing — the app would ignore it anyway.
+- One figure per question at most. If two structures are compared, pick the one
+  the *answer* hinges on, or omit.
+
+### 14.3 User-choice trigger (ask before attaching)
+
+Figures are **opt-in**:
+
+- **Default (no structure content):** attach nothing, don't mention figures.
+- **Figure-eligible questions detected, no flag:** ask **once** before emitting
+  — `"구조 그림(3D)을 N개 문항에 붙일까요? [예/아니오]"`. Add `figure:` lines
+  only if the user answers yes.
+- **User passed a `figures` / `그림` flag** (e.g. `/workbook ... figures`):
+  skip the question and attach figures to all on-topic structure questions.
+- **User answers no / omits the flag:** emit the pack with no `figure:` lines.
+
+### 14.4 Worked example (FCC 유효 원자 + zinc blende)
+
+```yaml
+  - type: mcq
+    q: '면심입방(FCC) 단위격자 안의 유효 원자 개수는?'
+    choices:
+      - '1'
+      - '2'
+      - '4'
+      - '6'
+    answer: 2
+    explanation: |
+      꼭짓점 8개 × 1/8 + 면 6개 × 1/2 = 1 + 3 = 4.
+      FCC 단위격자의 유효 원자 수는 4개다.
+    figure: fcc        # 질문이 FCC 단위격자 그 자체를 다루므로 on-topic
+    tags: [crystal, fcc]
+
+  - type: mcq
+    q: '섬아연광(zinc blende) 구조의 GaAs에서 각 Ga 원자의 배위수는?'
+    choices:
+      - '4'
+      - '6'
+      - '8'
+      - '12'
+    answer: 0
+    explanation: |
+      zinc blende는 FCC 부격자 두 개가 (1/4,1/4,1/4)만큼 어긋나 겹친 구조로,
+      각 Ga는 4개의 As와 정사면체 배위를 이룬다. 배위수 = 4.
+    figure: zincblende
+    tags: [crystal, zincblende, gaas]
+```

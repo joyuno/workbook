@@ -11,6 +11,8 @@ You have been invoked through the `/workbook` slash command. The user wants a St
    - **Source path** (required): the file or directory to convert. Resolve relative to the user's current working directory.
    - **Title** (optional): explicit pack title, otherwise infer from filename or document heading.
    - **Counts** (optional): e.g. `mcq 5 + ox 3`. Default mcq 4-6 + ox 2-3 if absent.
+   - **Figures flag** (optional): `figures` / `그림`. Forces 3D structure figures
+     on for on-topic crystal-structure questions, skipping the prompt in step 4.5.
 3. Pick the ingestion strategy by extension (see SKILL §1 table):
    - `.md` / `.txt` / `.pdf` / image → `Read` directly.
    - `.docx` / `.pptx` → `pandoc` → `Read`. Fallback chain if pandoc missing.
@@ -19,6 +21,15 @@ You have been invoked through the `/workbook` slash command. The user wants a St
    - One-line summary (include source filename + page range if PDF)
    - Suggested filename (kebab-case, `.yml`)
    - YAML body in a single ```yaml fenced block, nothing else.
+4.5. **Structure figures (user choice — see SKILL §14):** after drafting, check
+   whether any question is *about* a crystal structure the app can render (SC /
+   BCC / FCC / diamond / HCP / zinc blende / rock salt / CsCl / fluorite).
+   - None → emit normally, say nothing about figures.
+   - Some, and the user passed `figures` / `그림` → attach `figure:` to each
+     on-topic structure question, then emit.
+   - Some, and no flag → ask once: `"구조 그림(3D)을 N개 문항에 붙일까요?
+     [예/아니오]"`. Attach `figure:` only on yes. Never invent a figure name
+     outside the supported list — the app silently ignores unknown values.
 
 ## What NOT to do
 
